@@ -7,43 +7,43 @@ namespace Max
     public class Program
     {
 
-        static List<Card>[] communityCards = new List<Card>[5];
+        static List<Card>[] communityCards = new List<Card>[5]; // the five cards in the middle of the poker table
         static Deck deck = new Deck(2);
 
         static int Main()
         {
 
-            Player[] players = new Player[UI.inputI("How many players are joining?: ") ?? 0]; UI.Reset();
-            
-            UI.print($"{deck.cards.Count / 52} decks of cards in the deck - {deck.cards.Count} cards in the game - {players.Length} players online", 0, 0, true);
-        
-            
+            Player[] players = new Player[UI.inputI("How many players are joining?: ") ?? 0];
 
-
-
-
-            ////////////////////////////////////////////////////////////////////////Dealing cards
-            deck.shuffle(5);
-    
-            for (int i = 0; i < players.Length; ++i)
-            {
-                players[i] = new Player();
-                players[i].updateHand(deck.first());
-            }
-            
-            UI.print("Done with dealing first cards");
-
-            for (int i = 0; i < players.Length; ++i)
             {
 
-                players[i].updateHand(deck.first());
-            }
+                int balance = UI.inputI("What should be the balance of the players?: ") ?? 100;
 
-            UI.print("Done with dealing second cards");
-            ////////////////////////////////////////////////////////////////////////
+
+                ////////////////////////////////////////////////////////////////////////Dealing cards
+                deck.shuffle(5);
+
+                for (int i = 0; i < players.Length; ++i)
+                {
+                    players[i] = new Player(balance);
+                    players[i].updateHand(deck.first());
+                }
+
+                UI.print("Done with dealing first cards");
+
+                for (int i = 0; i < players.Length; ++i)
+                {
+
+                    players[i].updateHand(deck.first());
+                }
+
+                UI.print("Done with dealing second cards");
+                ////////////////////////////////////////////////////////////////////////
+            }
 
 
             UI.Reset();
+            UI.print($"{deck.cards.Count / 52} decks of cards in the deck - {deck.cards.Count} cards in the game - {players.Length} players online", 0, 0, true);
             UI.print(" ------------------------------------------------------------------", 0, 15, true);
             UI.print("| 'Space' for  check | 'Z' for call | 'X' for raise | 'W' for fold |", 0, 16, true);
             UI.print(" ------------------------------------------------------------------", 0, 17, true);
@@ -55,14 +55,14 @@ namespace Max
 
             while ( true ) //The game loop
             {
-                key = Console.ReadKey(intercept: true).Key;
+                key = Console.ReadKey(intercept: false).Key;
                 UI.Reset();
                 
 
 
                 // check, call, raise, or fold
                 switch (key)
-                 {
+                {
 
                     case ConsoleKey.Spacebar: //check
 
@@ -106,6 +106,21 @@ namespace Max
      public class Player
     {
         public Card [] hand { get; private set; } = new Card[2];
+        int balance;
+        public int bet { get; private set; } = 0;
+
+
+
+        public Player(int balance)
+        {
+            this.balance = balance;
+           
+        }
+
+        public bool increaseBet(int x)
+        {
+            return true;
+        }
 
         public void updateHand(Card card) 
         {
@@ -266,6 +281,7 @@ namespace Max
         {
             Console.WriteLine();
         }
+
 
         public static void Reset(bool cleanBuffer = false)
         {
