@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
@@ -7,17 +8,20 @@ namespace Max
     public class Program
     {
 
-        static List<Card>[] communityCards = new List<Card>[5]; // the five cards in the middle of the poker table
+        static List<Card> communityCards = new List<Card>(); // the five cards in the middle of the poker table
         static Deck deck = new Deck(2);
 
         static int Main()
         {
 
-            Player[] players = new Player[UI.inputI("How many players are joining?: ") ?? 0];
+            Player[] players;
 
             {
+                int temp = UI.inputI("How many players are joining?: ") ?? 0;
+                players = new Player[(temp < 2) ? 2 : temp];
 
-                int balance = UI.inputI("What should be the balance of the players?: ") ?? 100;
+
+                int balance = UI.inputI("What should be the balance of the players?: ") ?? 1000;
 
 
                 ////////////////////////////////////////////////////////////////////////Dealing cards
@@ -28,7 +32,7 @@ namespace Max
                     players[i] = new Player(balance);
                     players[i].updateHand(deck.first());
                 }
-
+            }
                 UI.print("Done with dealing first cards");
 
                 for (int i = 0; i < players.Length; ++i)
@@ -39,7 +43,7 @@ namespace Max
 
                 UI.print("Done with dealing second cards");
                 ////////////////////////////////////////////////////////////////////////
-            }
+
 
 
             UI.Reset();
@@ -53,54 +57,90 @@ namespace Max
             ////////////////////////////////////////////////////////////////////////Game loop
             ConsoleKey key;
 
-            while ( true ) //The game loop
+            for (int turn = 0; ; ++turn) //(int turn = 0; turn < 3; ++turn) //The game loop
             {
-                key = Console.ReadKey(intercept: false).Key;
-                UI.Reset();
-                
-
-
-                // check, call, raise, or fold
-                switch (key)
+                for (int playerIndex = 0; playerIndex < players.Length; ++playerIndex)
                 {
+                    if (players[playerIndex].folded) continue;
 
-                    case ConsoleKey.Spacebar: //check
-
-                        UI.print("Check             ", 2, 4, true);
-                        break;
-
-                    case ConsoleKey.Z: //call
-
-                        UI.print($"Called for {800}$", 2, 4, true);
-                        break;
-
-                    case ConsoleKey.X: //raise
-
-                        UI.print($"Raised to {900}$ ", 2, 4, true);
-                        break;
-
-                    case ConsoleKey.W: //fold
-
-                        UI.print($"{"Max"} folded   ", 2, 4, true);
-                        break;
+                    key = Console.ReadKey(intercept: true).Key;
+                    UI.Reset();
 
 
-                    case ConsoleKey.Escape:
 
-                        return 0;
-                        
+                    // check, call, raise, or fold
+                    switch (key)
+                    {
 
-                 }
+                        case ConsoleKey.Spacebar: //check
+
+                            UI.print("Check             ", 2, 4, true);
+                            break;
+
+                        case ConsoleKey.Z: //call
 
 
-                
+                            if ( !players[playerIndex].newBet(players[(playerIndex-1 < 0) ? (players.Length + playerIndex - 1) : (playerIndex - 1)].bet))
+                            {
+                                players[playerIndex].allIn();
+                            }
+
+                            UI.print($"Called for {players[playerIndex].bet}$", 2, 4, true);
+
+                            break;
+
+                        case ConsoleKey.X: //raise
+
+                            if( !players[playerIndex].newBet(UI.inputI("What will be your new bet?: ", 0, 20) ?? players[playerIndex].bet) )
+                            {
+                                players[playerIndex].allIn();
+                            }
+
+                            UI.print($"Raised to {players[playerIndex].bet}$ ", 2, 4, true);
+
+
+                            break;
+
+                        case ConsoleKey.W: //fold
+
+                            UI.print($"{"Max"} folded   ", 2, 4, true);
+
+                            players[playerIndex].fold();
+
+                            break;
+
+
+                        case ConsoleKey.Escape:
+
+                            return 0;
+
+
+                    }
+
+
+                }
+                communityCardsAdd(turn);
             }
+            
 
             return 0;
         }
+
+        public static void communityCardsAdd(int turn)
+        {
+            //burn
+            deck.first();
+
+            if (turn == 0) { communityCards.Add(deck.first()); communityCards.Add(deck.first()); }
+            communityCards.Add(deck.first());
+        }
+
+
+
+
     }
 
-
+   
 
 
      public class Player
@@ -109,7 +149,7 @@ namespace Max
         int balance;
         public int bet { get; private set; } = 0;
 
-
+        public bool folded { get; private set; } = false;
 
         public Player(int balance)
         {
@@ -117,8 +157,22 @@ namespace Max
            
         }
 
-        public bool increaseBet(int x)
+        public void fold(bool activate = false)
         {
+            
+            folded = true;
+            if (activate) folded = false;
+        }
+
+        public void allIn()
+        {
+            bet = balance;
+        }
+        public bool newBet(int x)
+        {
+            if (x > balance) return false;
+
+            bet = x;
             return true;
         }
 
