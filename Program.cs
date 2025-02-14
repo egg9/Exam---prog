@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Max
@@ -13,6 +14,7 @@ namespace Max
 
         static int Main()
         {
+            Console.OutputEncoding = Encoding.UTF8;
 
             Player[] players;
 
@@ -33,16 +35,16 @@ namespace Max
                     players[i].updateHand(deck.first());
                 }
             }
-                UI.print("Done with dealing first cards");
+            UI.print("Done with dealing first cards");
 
-                for (int i = 0; i < players.Length; ++i)
-                {
+            for (int i = 0; i < players.Length; ++i)
+            {
 
-                    players[i].updateHand(deck.first());
-                }
+                players[i].updateHand(deck.first());
+            }
 
-                UI.print("Done with dealing second cards");
-                ////////////////////////////////////////////////////////////////////////
+            UI.print("Done with dealing second cards");
+            ////////////////////////////////////////////////////////////////////////
 
 
 
@@ -53,6 +55,8 @@ namespace Max
             UI.print(" ------------------------------------------------------------------", 0, 17, true);
             UI.print("What will you do?", 0, 18, true);
 
+            
+
 
             ////////////////////////////////////////////////////////////////////////Game loop
             ConsoleKey key;
@@ -61,6 +65,21 @@ namespace Max
             {
                 for (int playerIndex = 0; playerIndex < players.Length; ++playerIndex)
                 {
+                    int i = 0;
+                    communityCards.ForEach(
+                        x => {
+                            UI.print(x.getCard(), 5 + i * 12, 8, true);
+                            ++i;
+                        });
+
+                    UI.print($"{players[playerIndex].balance}", 80, 5, true);
+                    UI.print($"{players[playerIndex].bet}", 80, 6, true);
+
+
+                    UI.print($"{players[playerIndex].hand[0].getCard()}    {players[playerIndex].hand[1].getCard()}", 15, 20, true); 
+
+
+
                     if (players[playerIndex].folded) continue;
 
                     key = Console.ReadKey(intercept: true).Key;
@@ -80,7 +99,7 @@ namespace Max
                         case ConsoleKey.Z: //call
 
 
-                            if ( !players[playerIndex].newBet(players[(playerIndex-1 < 0) ? (players.Length + playerIndex - 1) : (playerIndex - 1)].bet))
+                            if (!players[playerIndex].newBet(players[(playerIndex - 1 < 0) ? (players.Length + playerIndex - 1) : (playerIndex - 1)].bet))
                             {
                                 players[playerIndex].allIn();
                             }
@@ -91,7 +110,7 @@ namespace Max
 
                         case ConsoleKey.X: //raise
 
-                            if( !players[playerIndex].newBet(UI.inputI("What will be your new bet?: ", 0, 20) ?? players[playerIndex].bet) )
+                            if (!players[playerIndex].newBet(UI.inputI("What will be your new bet?: ", 0, 22) ?? players[playerIndex].bet))
                             {
                                 players[playerIndex].allIn();
                             }
@@ -121,15 +140,23 @@ namespace Max
                 }
                 communityCardsAdd(turn);
             }
-            
 
-            return 0;
+            //checking for the highest pair
+            for (int playerIndex = 0; playerIndex < players.Length; ++playerIndex)
+            {
+
+
+            }
+
+
+                return 0;
         }
 
         public static void communityCardsAdd(int turn)
         {
-            //burn
-            deck.first();
+            if (turn > 2) return;// 5 -1
+
+            deck.first(); //burn
 
             if (turn == 0) { communityCards.Add(deck.first()); communityCards.Add(deck.first()); }
             communityCards.Add(deck.first());
@@ -140,13 +167,13 @@ namespace Max
 
     }
 
-   
 
 
-     public class Player
+
+    public class Player
     {
-        public Card [] hand { get; private set; } = new Card[2];
-        int balance;
+        public Card[] hand { get; private set; } = new Card[2];
+        public int balance { get; private set; }
         public int bet { get; private set; } = 0;
 
         public bool folded { get; private set; } = false;
@@ -154,12 +181,12 @@ namespace Max
         public Player(int balance)
         {
             this.balance = balance;
-           
+
         }
 
         public void fold(bool activate = false)
         {
-            
+
             folded = true;
             if (activate) folded = false;
         }
@@ -176,7 +203,7 @@ namespace Max
             return true;
         }
 
-        public void updateHand(Card card) 
+        public void updateHand(Card card)
         {
             if (hand[0].Equals(new Card())) hand[0] = card;
             else if (hand[1].Equals(new Card())) hand[1] = card;
@@ -220,7 +247,7 @@ namespace Max
             }
         }
 
-        public Card first() 
+        public Card first()
         {
             Card c = cards[0];
             cards.RemoveAt(0);
@@ -241,14 +268,16 @@ namespace Max
             this.suit = suit;
         }
 
-        public string getSuit() => new[] { "Heart", "Spade", "Diamond", "Club" }[suit]; //To get get suit of the card
+        public string getSuit() => new[] { "♥️", "♠️", "♦️", "♣️" }[suit]; //To get get suit of the card
 
         public string getValue()
         {
             //Return for value or number of the card
             if (value <= 10) return value.ToString();
-            return "JDKA"[value-11] + "";
+            return "JDKA"[value - 11] + "";
         }
+
+        public string getCard() => $"{getValue()} {getSuit()}";
 
     }
 
@@ -278,7 +307,7 @@ namespace Max
         /// <param name="text"></param>
         /// <param name="x"></param>
         /// <param name="y"></param>
-        public static void print(object text, int x, int y, bool sticky = false ) // the name sticky comes from CSS, where it is used to make an element fixed or sticked to one position on the screen and not an the body
+        public static void print(object text, int x = 0, int y = 0, bool sticky = false ) // the name sticky comes from CSS, where it is used to make an element fixed or sticked to one position on the screen and not an the body
         {
 
             Console.SetCursorPosition(x, y);
