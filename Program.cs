@@ -209,45 +209,36 @@ namespace Max
             else if (hand[1].Equals(new Card())) hand[1] = card;
         }
 
-        public int rank(Card [] cards, List<Card> communityCards)
+        public int rank(Card [] hand, List<Card> communityCards)
         {
+
+            Card [] cards = new[] { hand[0], hand[1] }.Concat(communityCards).OrderByDescending(cards => cards.value).ToArray();
+
+
+
+
+
+
             //Royal flush
-            if (contains(new[] { 14, 13, 12, 11, 10 }, ) )
             {
+                Card[] temp = cards.Select(cards => { if (new[] { 14, 13, 12, 11, 10 }.Contains(cards.value)) return cards; else return new Card(); }).ToArray();
 
-            }
-
-            int [] colors = new[] { cards[0].suit, cards[1].suit };
-            int [] values = new[] { cards[0].value, cards[1].value }.Concat(communityCards.Select(card => { colors.Append(card.suit); return card.value; })).ToArray();
-            // = new[] { cards[0].suit, cards[1].suit }.Concat(communityCards.Select(card => card.suit)).ToArray();
-
-
-
-
-
-                return 0;
-        }
-
-        bool checkForValue(int [] a, int [] b, bool color)
-        {
-            bool output = true;
-
-            foreach (int e in b)
-            {
-                if (! a.Contains(e) )
+               // if (    )
                 {
-                    output = false;
+
                 }
             }
 
-            return output;
+
+
+
+            //High card
+
+
+            return 0; 
         }
 
-        bool checkForSuit()
-        {
 
-            return true;
-        }
     }
 
 
