@@ -212,12 +212,19 @@ namespace Max
         public int rank(Card [] cards, List<Card> communityCards)
         {
             //Royal flush
-            if (contains(new[] { 14, 13, 12, 11, 10 }, new[] { cards[0].value, cards[1].value }.Concat(communityCards.Select(card => card.value)).ToArray()) )
+            if (contains(new[] { 14, 13, 12, 11, 10 }, ) )
             {
 
             }
 
-            
+            int [] colors = new[] { cards[0].suit, cards[1].suit };
+            int [] values = new[] { cards[0].value, cards[1].value }.Concat(communityCards.Select(card => { colors.Append(card.suit); return card.value; })).ToArray();
+            // = new[] { cards[0].suit, cards[1].suit }.Concat(communityCards.Select(card => card.suit)).ToArray();
+
+
+
+
+
                 return 0;
         }
 
@@ -234,6 +241,12 @@ namespace Max
             }
 
             return output;
+        }
+
+        bool checkForSuit()
+        {
+
+            return true;
         }
     }
 
