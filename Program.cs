@@ -208,6 +208,33 @@ namespace Max
             if (hand[0].Equals(new Card())) hand[0] = card;
             else if (hand[1].Equals(new Card())) hand[1] = card;
         }
+
+        public int rank(Card [] cards, List<Card> communityCards)
+        {
+            //Royal flush
+            if (contains(new[] { 14, 13, 12, 11, 10 }, new[] { cards[0].value, cards[1].value }.Concat(communityCards.Select(card => card.value)).ToArray()) )
+            {
+
+            }
+
+            
+                return 0;
+        }
+
+        bool checkForValue(int [] a, int [] b, bool color)
+        {
+            bool output = true;
+
+            foreach (int e in b)
+            {
+                if (! a.Contains(e) )
+                {
+                    output = false;
+                }
+            }
+
+            return output;
+        }
     }
 
 
