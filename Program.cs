@@ -139,7 +139,14 @@ namespace Max
 
                 }
                 communityCardsAdd(turn);
+
+                if (turn > 2)
+                {
+                    UI.print( players[0].sequenceFinder(players[0].hand.Concat(communityCards).OrderByDescending(cards => cards.value).ToArray(), "@@"));
+                }
             }
+
+            
 
             //checking for the highest pair
             for (int playerIndex = 0; playerIndex < players.Length; ++playerIndex)
@@ -209,10 +216,11 @@ namespace Max
             else if (hand[1].Equals(new Card())) hand[1] = card;
         }
 
-        public int rank(Card [] hand, List<Card> communityCards)
+        public (int, int[]) rank(Card [] hand, List<Card> communityCards)
         {
 
             Card [] cards = new[] { hand[0], hand[1] }.Concat(communityCards).OrderByDescending(cards => cards.value).ToArray();
+            (int, int[]) output;
 
 
 
@@ -231,13 +239,125 @@ namespace Max
 
 
 
+            //two pair
+            {
+                int[] temp = new int[15];
+                output = (2, new[] { 0, 0 });
+
+                foreach (Card item in cards)
+                {
+                    ++temp[item.value];
+                }
+
+                for (int i = 14; i >= 1; --i)
+                {
+                    if (i < 2) break;
+                    if (temp[i] > 1) output = (2, new[] { i, i });
+                }
+
+
+
+                for (int i = 14; i >= 1; --i)
+                {
+                    if (i < 2) break;
+                    if (temp[i] > 1 && i != output.Item2[0]) return (2, output.Item2.Concat( new[] { i, i }).ToArray());
+                }
+                
+            }
+            
+
+
+            //pair
+            {
+                int [] temp = new int[15];
+
+                foreach (Card item in cards)
+                {
+                    ++temp[item.value];
+                }
+
+                for (int i = 14; i >= 1; --i)
+                {
+                    if (i < 2) break;
+                    if (temp[i] > 1) return (2, new[] { i, i });
+                }
+                
+            }
+            
 
             //High card
+            {
+                return (1, new[] { cards[0].value } );
+            }
 
-
-            return 0; 
+           // sequenceFinder("-----");
         }
 
+
+        /// <summary>
+        /// Findes a match in yours and community cards using the sequence
+        /// </summary>
+        /// <param name="sequence">
+        /// <para> Each charcter has a meaning in the sequence. </para>
+        /// <para> '#' means match for suit </para>
+        /// <para> '@' or '£' means match for value. Fx. "@@@@" is four of a kind and "@@££" is 2 pairs </para>
+        /// <para> '*' means match for both value and suit </para>
+        /// </param>
+        /// <returns></returns>
+        public bool ?sequenceFinder(Card [] inputCards, string sequence = "")
+        {
+            if (sequence.Length > 5 || sequence.Length < 1 || inputCards.Length != 7) return null;
+
+
+            List<Card> outputCards = new List<Card>(5);
+
+
+
+            // value - @ and £
+            List<Card> [] temp = new List<Card>[15];
+            for (int i = 0; i < 15; ++i)
+            {
+                temp[i] = new List<Card>();
+            }
+
+
+
+            foreach (Card item in inputCards)
+            {
+                temp[item.value].Add(item);
+            }
+            
+            for (int i = 14; i >= 2; --i)
+            {
+
+                if (temp[i].Count == sequence.Count( c => c == '@' ))
+                {
+                    for (int j = 0; j < sequence.Count(c => c == '@'); ++j)
+                    {
+                        outputCards.Add( temp[i][j] );
+                    }
+
+                    continue;
+                } else if (temp[i].Count == sequence.Count(c => c == '£'))
+                {
+                    for (int j = 0; j < sequence.Count(c => c == '£'); ++j)
+                    {
+                        outputCards.Add(temp[i][j]);
+                    }
+
+                    break;
+                }
+            }
+            //-----------------------------------done---------------------------------------
+            return (outputCards.Count > 0) ? true : false;
+
+
+
+
+
+
+            return true;
+        }
 
     }
 
