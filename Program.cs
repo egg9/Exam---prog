@@ -304,7 +304,7 @@ namespace Max
         /// <para> '*' means match for both value and suit </para>
         /// </param>
         /// <returns></returns>
-        public bool ?sequenceFinder(Card [] inputCards, string sequence = "")
+        public bool? sequenceFinder(Card[] inputCards, string sequence = "")
         {
             if (sequence.Length > 5 || sequence.Length < 1 || inputCards.Length != 7) return null;
 
@@ -313,53 +313,113 @@ namespace Max
 
 
 
-            // value - @ and £
-            List<Card> [] temp = new List<Card>[15];
-            for (int i = 0; i < 15; ++i)
+            // suit - #
+            if (sequence.Contains('#'))
             {
-                temp[i] = new List<Card>();
+
+
+
             }
 
 
+
+
+            // value - @ and £
+            if (sequence.Contains('@') && sequence.Contains('£'))
+            {
+
+                //-----------------------------------done---------------------------------------
+
+
+
+
+
+
+                return (outputCards.Count > 0) ? true : false;
+
+
+
+
+
+
+                return true;
+            }
+
+        }
+        Card[]? suits(Card[] inputCards, string sequence = "")
+        {
+            List<Card>[] suit = new List<Card>[4];
+            for (int i = 0; i < 4; ++i)
+            {
+                suit[i] = new List<Card>();
+            }
 
             foreach (Card item in inputCards)
             {
-                temp[item.value].Add(item);
+                suit[item.suit].Add(item);
             }
-            
+
+            for (int i = 0; i < 4; ++i)
+            {
+                if (suit[i].Count == sequence.Count(c => c == '#'))
+                {
+                    for (int j = 0; j < sequence.Count(c => c == '#'); ++j)
+                    {
+                        return suit[i].Slice(0, sequence.Count(c => c == '#')).ToArray();
+                    }
+
+                }
+            }
+            return null;
+        }
+
+        Card[]? value(Card[] inputCards, string sequence = "")
+        {
+            List<Card> outputCards = new List<Card>(5);
+            List<Card>[] value = new List<Card>[15];
+            for (int i = 0; i < 15; ++i)
+            {
+                value[i] = new List<Card>();
+            }
+
+            foreach (Card item in inputCards)
+            {
+                value[item.value].Add(item);
+            }
+
             for (int i = 14; i >= 2; --i)
             {
 
-                if (temp[i].Count == sequence.Count( c => c == '@' ))
+                if (value[i].Count == sequence.Count(c => c == '@'))
                 {
                     for (int j = 0; j < sequence.Count(c => c == '@'); ++j)
                     {
-                        outputCards.Add( temp[i][j] );
+                        outputCards.Add(value[i][j]);
                     }
 
                     continue;
-                } else if (temp[i].Count == sequence.Count(c => c == '£'))
+                }
+                else if (value[i].Count == sequence.Count(c => c == '£'))
                 {
                     for (int j = 0; j < sequence.Count(c => c == '£'); ++j)
                     {
-                        outputCards.Add(temp[i][j]);
+                        outputCards.Add(value[i][j]);
                     }
 
-                    break;
+                    return outputCards.ToArray();
                 }
             }
-            //-----------------------------------done---------------------------------------
-            return (outputCards.Count > 0) ? true : false;
 
 
+            Card[]? straight(Card[] inputCards, string sequence = "")
+            {
+                string appear = "";
 
 
+            }
 
-
-            return true;
         }
-
-    }
+        
 
 
     public class Deck
