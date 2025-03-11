@@ -10,7 +10,7 @@ namespace Max
     {
 
         static List<Card> communityCards = new List<Card>(); // the five cards in the middle of the poker table
-        static Deck deck = new Deck(2);
+        static Deck deck = new Deck(1);
 
         static int Main()
         {
@@ -216,15 +216,20 @@ namespace Max
             else if (hand[1].Equals(new Card())) hand[1] = card;
         }
 
-        public (int, int[]) rank(Card [] hand, List<Card> communityCards)
+
+
+        public (int, Card[]) rank(Card [] hand, List<Card> communityCards)
         {
 
             Card [] cards = new[] { hand[0], hand[1] }.Concat(communityCards).OrderByDescending(cards => cards.value).ToArray();
-            (int, int[]) output;
+            (int, Card[]) output;
 
 
 
-
+            /// <para> '-' means don't care </para>
+            /// <para> '#' means match for suit </para>
+            /// <para> '@' means match for value. Fx. "@@@@" is four of a kind and "@@-@@" is 2 pairs </para>
+            /// <para> 's' means match for next value to be one less (straight), if starting with uppercase the output will start with highest card </para>
 
 
             //Royal flush
@@ -236,6 +241,9 @@ namespace Max
 
                 }
             }
+
+
+
 
 
 
@@ -269,42 +277,106 @@ namespace Max
 
             //pair
             {
-                int [] temp = new int[15];
+                cards = cards.OrderByDescending(e => e.value).ToArray();
 
-                foreach (Card item in cards)
+                for (int i = 0; i < 6; ++i)
                 {
-                    ++temp[item.value];
+                    if ( subSequenceMatch("@@", cards) ) return (2, new[] { cards[0 + i], cards[1 + i] });
                 }
 
-                for (int i = 14; i >= 1; --i)
-                {
-                    if (i < 2) break;
-                    if (temp[i] > 1) return (2, new[] { i, i });
-                }
                 
             }
             
 
             //High card
             {
-                return (1, new[] { cards[0].value } );
+                cards = cards.OrderByDescending(e => e.value).ToArray();
+                return (1, new[] { cards[0] } );
             }
 
            // sequenceFinder("-----");
         }
 
+        public bool subSequenceMatch(string subSequence, Card[] inputCards, int index = 0)
+        {
+            if (subSequence[index] != subSequence[index + 1]) return true;
+
+            switch (subSequence[index])
+            {
+                case '#':
+                    if (inputCards[index].suit != inputCards[index + 1].suit) return false;
+                    else return subSequenceMatch(subSequence, inputCards, index + 1);
+
+                case '@':
+                    if (inputCards[index].value != inputCards[index + 1].value) return false;
+                    else return subSequenceMatch(subSequence, inputCards, index + 1);
+
+                case 's':
+                    if (inputCards[index].value != inputCards[index + 1].value - 1) return false;
+
+                    return subSequenceMatch(subSequence, inputCards, index + 1);
+
+                default:
+                    return false;
+                
+            }
+        }
+
+        public bool sequenceMatcher(string sequence, Card[] inputCards, out List<Card> cards)
+        {
+            Card[] inputCardsBySuit = inputCards.OrderByDescending(e => e.suit).ToArray();
+            Card[] inputCardsByValue = inputCards.OrderByDescending(e => e.value).ToArray();
+
+
+            int count1 = sequence.Count(e => e == '#');
+            bool boolean = true;
+            for (int i = 0; i < inputCardsBySuit.Length; ++i)
+            {
+                foreach (Card card in inputCardsBySuit)
+                {
+                    
+                }
+            }
+            
+
+
+            foreach (char ch in sequence)
+            {
+                if (ch == '#')
+                {
+                    cards.Add()
+
+                }
+
+                if (ch == '@') { }
+
+                if (ch == 's') { }
+
+
+
+
+                if (ch == '#') { }
+
+
+            }
+
+
+            return false;
+        }
 
         /// <summary>
         /// Findes a match in yours and community cards using the sequence
         /// </summary>
         /// <param name="sequence">
         /// <para> Each charcter has a meaning in the sequence. </para>
+        /// <para> '-' means don't care </para>
         /// <para> '#' means match for suit </para>
-        /// <para> '@' or '£' means match for value. Fx. "@@@@" is four of a kind and "@@££" is 2 pairs </para>
-        /// <para> '*' means match for both value and suit </para>
+        /// <para> '@' means match for value. Fx. "@@@@" is four of a kind and "@@-@@" is 2 pairs </para>
+        /// <para> 's' means match for next value to be one less (straight), if starting with uppercase the output will start with highest card </para>
+        /// <para> Fx. "S####" royal flush, "s####" straight flush and "sssss" flush</para>
         /// </param>
         /// <returns></returns>
-        public bool? sequenceFinder(Card[] inputCards, string sequence = "")
+        public bool? sequenceFinder(string sequence, Card[] inputCards )
         {
             if (sequence.Length > 5 || sequence.Length < 1 || inputCards.Length != 7) return null;
 
@@ -312,41 +384,123 @@ namespace Max
             List<Card> outputCards = new List<Card>(5);
 
 
+            inputCards = inputCards.OrderBy(c => c.value).ToArray();
+            Card[,] table = new Card[15,4];
 
-            // suit - #
-            if (sequence.Contains('#'))
+
+            foreach (Card card in inputCards)
             {
-
-
-
+                table[card.value, card.suit] = card;
+                if (card.value == 14) table[1, card.suit] = card;
             }
 
 
 
 
-            // value - @ and £
-            if (sequence.Contains('@') && sequence.Contains('£'))
+            inputCards = inputCards.OrderByDescending(c => c.value).ToArray();
+
+            List<Card>[] cardObj = new List<Card>[inputCards.Distinct().Count()]; cardObj.Initialize();
+            for (int i = 0, j = 0; i < inputCards.Length; ++i)
             {
+                cardObj[j].Add(inputCards[i]);
 
-                //-----------------------------------done---------------------------------------
-
-
-
-
-
-
-                return (outputCards.Count > 0) ? true : false;
-
-
-
-
-
-
-                return true;
+                if (inputCards[i].value != inputCards[i].value) ++j;
             }
+
+
+            switch(sequence)
+            {
+                //royal flush
+                case "S####":
+                case "s####":
+                    if (sequence[0] == 'S' && cardObj[0][0].value != 14) return false;
+
+                    if (nextInSequence(cardObj, "sssss")) return nextInSequence(cardObj, "#####");
+                    else return false;
+
+                case "@@-@@":
+                case "@@@@":
+                case "@@@":
+                case "@@":
+                    if (sequence[2] == '-') 
+
+                    return (sequence[2] == '-') ? nextInSequence(cardObj, sequence) && nextInSequence(cardObj, sequence, 2) : nextInSequence(cardObj, sequence);
+
+
+                    break;
+                
+            }
+
+
+
+
 
         }
-        Card[]? suits(Card[] inputCards, string sequence = "")
+
+
+
+        bool nextInSequence(Card[,] inputCards, string sequence, out List< Card > cards)
+        {
+            cards = new List<Card>();
+            string[] subSequences = sequence.Split('-');
+            string temp = "";
+
+
+            Card[][] inputCardsTransposed = new Card[4][];
+            for (int i = 0; i < 15; ++i)
+            {
+                inputCardsTransposed[4] = new Card[15];
+                for (int j = 0; j < 4; ++j)
+                {
+                    inputCardsTransposed[j][i] = inputCards[i, j];
+                }
+            }
+
+
+            foreach (string subSequence in subSequences)
+            {
+
+                for (int i = 3; i >= 0; i--)
+                {
+
+                    int index = ((inputCardsTransposed[i]
+                        .Select((select) => (select.Equals(new Card())) ? '-' : '+').ToString() ?? "")
+                        .Reverse().ToString() ?? "")
+                        .IndexOf( new string('+', subSequence.Count(ch => ch == '#')) );
+
+                    if (index != 0) break;
+
+                    cards.AddRange(inputCardsTransposed[i][(index..subSequence.Count(ch => ch == '#'))] );
+
+                }
+
+            }
+
+
+
+            foreach (char c in "#@s")
+            {
+                if (sequence.Count(e => e == c) == 1)
+                {
+                    cards.Add((c == '#') ? inputCardsBySuit[0] : inputCardsByValue[0]);
+                    continue;
+                }
+
+                for (int j = 1; j < sequence.Count(e => e == sequence[i]); ++j)
+                {
+                    if (sequence[i] == '#' && inputCardsBySuit[j - 1].suit == inputCardsBySuit[j].suit) cards.Add(inputCardsBySuit[j - 1]);
+                    if (sequence[i] == '@' && inputCardsByValue[j - 1].value == inputCardsByValue[j].value) cards.Add(inputCardsByValue[j - 1]);
+                    if (sequence[i] == 's' && inputCardsByValue[j - 1].value == inputCardsByValue[j].value - 1) cards.Add(inputCardsByValue[j - 1]);
+                }
+            }
+
+
+            return false;
+        }
+
+
+
+            Card[]? suits(Card[] inputCards, string sequence = "")
         {
             List<Card>[] suit = new List<Card>[4];
             for (int i = 0; i < 4; ++i)
@@ -373,9 +527,19 @@ namespace Max
             return null;
         }
 
+        /*
         Card[]? value(Card[] inputCards, string sequence = "")
         {
             List<Card> outputCards = new List<Card>(5);
+
+            inputCards = inputCards.OrderBy(c => c.value).ToArray();
+
+            
+
+
+
+
+            /*
             List<Card>[] value = new List<Card>[15];
             for (int i = 0; i < 15; ++i)
             {
@@ -387,6 +551,9 @@ namespace Max
                 value[item.value].Add(item);
             }
 
+
+
+            
             for (int i = 14; i >= 2; --i)
             {
 
@@ -408,15 +575,38 @@ namespace Max
 
                     return outputCards.ToArray();
                 }
-            }
+            
+        }
 
 
             Card[]? straight(Card[] inputCards, string sequence = "")
             {
-                string appear = "";
+                inputCards = inputCards.OrderBy(c => c.value).ToArray();
+                List<Card> outputCards = new List<Card>(5);
+
+                for (int i = 0; i < 3; ++i)
+                {
+
+                    
+
+                    if (!nextInSequence(inputCards, i)) continue;
+                    else return inputCards[0..5];
+                    //else return inputCards.Skip(i).Take(5).ToArray();
+                    //else return inputCards.Take(new Range(i, i+5)).ToArray();
 
 
+                }
+
+                return null;
             }
+
+            bool nextInSequence(Card[] c, int index)
+            {
+
+                if (c[index].value == c[index + 1].value - 1) return nextInSequence(c, index - 1);
+                else return false;
+            }
+            */
 
         }
         
