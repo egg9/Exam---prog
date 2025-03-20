@@ -218,11 +218,11 @@ namespace Max
 
 
 
-        public (int, Card[]) rank(Card [] hand, List<Card> communityCards)
+        public (int rank, Card[] cards) rank(Card [] hand, List<Card> communityCards)
         {
+            Card[] cards = hand.Concat(communityCards).ToArray();
 
-            Card [] cards = new[] { hand[0], hand[1] }.Concat(communityCards).OrderByDescending(cards => cards.value).ToArray();
-            (int, Card[]) output;
+            Card[] temp;
 
 
 
@@ -232,136 +232,120 @@ namespace Max
             /// <para> 's' means match for next value to be one less (straight), if starting with uppercase the output will start with highest card </para>
 
 
+
+
             //Royal flush
             {
-                Card[] temp = cards.Select(cards => { if (new[] { 14, 13, 12, 11, 10 }.Contains(cards.value)) return cards; else return new Card(); }).ToArray();
+                temp = matchByStraight(cards);
+                temp = matchBySuit(temp);
 
-               // if (    )
-                {
-
-                }
+                if (temp.Length > 5) return (9, temp);
             }
 
-
-
-
-
-
-            //two pair
+            //Straight flush
             {
-                int[] temp = new int[15];
-                output = (2, new[] { 0, 0 });
+                temp = matchByStraight(cards, 13);
+                temp = matchBySuit(temp);
 
-                foreach (Card item in cards)
-                {
-                    ++temp[item.value];
-                }
-
-                for (int i = 14; i >= 1; --i)
-                {
-                    if (i < 2) break;
-                    if (temp[i] > 1) output = (2, new[] { i, i });
-                }
-
-
-
-                for (int i = 14; i >= 1; --i)
-                {
-                    if (i < 2) break;
-                    if (temp[i] > 1 && i != output.Item2[0]) return (2, output.Item2.Concat( new[] { i, i }).ToArray());
-                }
-                
+                if (temp.Length > 5) return (8, temp);
             }
-            
 
-
-            //pair
+            //Four of a kind
             {
-                cards = cards.OrderByDescending(e => e.value).ToArray();
+                temp = matchByValue(cards, 4);
 
-                for (int i = 0; i < 6; ++i)
-                {
-                    if ( subSequenceMatch("@@", cards) ) return (2, new[] { cards[0 + i], cards[1 + i] });
-                }
-
-                
+                if (temp.Length > 4) return (7, temp);
             }
-            
+
+            //Full house
+            {
+                temp = matchByValue(cards, 3);
+                if (temp.Length > 2) temp = temp.Concat( matchByValue(cards, 2, temp[0].value-1) ).ToArray();
+
+                if (temp.Length > 5) return (6, temp);
+            }
+
+            //Flush
+            {
+                temp = matchBySuit(cards);
+
+                if (temp.Length > 5) return (5, temp);
+            }
+
+            //Straight
+            {
+                temp = matchByStraight(cards);
+
+                if (temp.Length > 5) return (4, temp);
+            }
+
+            //Three of a kind
+            {
+                temp = matchByValue(cards, 3);
+
+                if (temp.Length > 3) return (3, temp);
+            }
+
+            //Two pairs
+            {
+                temp = matchByValue(cards, 2);
+                temp = temp.Concat( matchByValue(cards, 2, temp[0].value-1) ).ToArray();
+
+                if (temp.Length > 4) return (2, temp);
+            }
+
+            //Pair
+            {
+                temp = matchByValue(cards, 2);
+
+                if (temp.Length > 2) return (1, temp);
+            }
 
             //High card
             {
-                cards = cards.OrderByDescending(e => e.value).ToArray();
-                return (1, new[] { cards[0] } );
+                return (0, matchByValue(cards, 1));
             }
 
-           // sequenceFinder("-----");
+
+
         }
 
-        public bool subSequenceMatch(string subSequence, Card[] inputCards, int index = 0)
+        Card[] matchBySuit(Card[] cards)
         {
-            if (subSequence[index] != subSequence[index + 1]) return true;
+            string suits = string.Join("", cards.Select((c) => c.suit.ToString() ?? "").ToArray());
 
-            switch (subSequence[index])
-            {
-                case '#':
-                    if (inputCards[index].suit != inputCards[index + 1].suit) return false;
-                    else return subSequenceMatch(subSequence, inputCards, index + 1);
+            if (suits.Length - 5 >= suits.Replace("0", "").Length) return cards.Where((c) => c.suit == 0).ToArray();
+            if (suits.Length - 5 >= suits.Replace("1", "").Length) return cards.Where((c) => c.suit == 1).ToArray();
+            if (suits.Length - 5 >= suits.Replace("2", "").Length) return cards.Where((c) => c.suit == 2).ToArray();
+            if (suits.Length - 5 >= suits.Replace("3", "").Length) return cards.Where((c) => c.suit == 3).ToArray();
 
-                case '@':
-                    if (inputCards[index].value != inputCards[index + 1].value) return false;
-                    else return subSequenceMatch(subSequence, inputCards, index + 1);
-
-                case 's':
-                    if (inputCards[index].value != inputCards[index + 1].value - 1) return false;
-
-                    return subSequenceMatch(subSequence, inputCards, index + 1);
-
-                default:
-                    return false;
-                
-            }
+            return new Card[0];
         }
 
-        public bool sequenceMatcher(string sequence, Card[] inputCards, out List<Card> cards)
+        Card[] matchByValue(Card[] cards, int lenght, int start = 14)
         {
-            Card[] inputCardsBySuit = inputCards.OrderByDescending(e => e.suit).ToArray();
-            Card[] inputCardsByValue = inputCards.OrderByDescending(e => e.value).ToArray();
+            string values = string.Join("", cards.Select((c) => c.value.ToString("X")).ToArray());
 
-
-            int count1 = sequence.Count(e => e == '#');
-            bool boolean = true;
-            for (int i = 0; i < inputCardsBySuit.Length; ++i)
+            for (int i = start; i > 0; --i)
             {
-                foreach (Card card in inputCardsBySuit)
-                {
-                    
-                }
+                if (values.Length - lenght >= values.Replace(i.ToString("X"), "").Length) return cards.Where((c) => c.value == i).ToArray();
             }
+
+
+            return new Card[0];
+        }
+
+        Card[] matchByStraight(Card[] cards, int start = 14)
+        {
+            char[] values = new string(' ', 14).ToCharArray();
+            foreach (Card c in cards)
+            {
+                values[c.value] = '#';
+            }
+            int index = string.Join("", values.Reverse()).IndexOf("#####"); if (index < 1) return new Card[0];
+
+            return cards.Where( (c) => c.value >= index && c.value <= index+5).ToArray();
             
-
-
-            foreach (char ch in sequence)
-            {
-                if (ch == '#')
-                {
-                    cards.Add()
-
-                }
-
-                if (ch == '@') { }
-
-                if (ch == 's') { }
-
-
-
-
-                if (ch == '#') { }
-
-
-            }
-
-
-            return false;
         }
 
         /// <summary>
@@ -376,239 +360,13 @@ namespace Max
         /// <para> Fx. "S####" royal flush, "s####" straight flush and "sssss" flush</para>
         /// </param>
         /// <returns></returns>
-        public bool? sequenceFinder(string sequence, Card[] inputCards )
-        {
-            if (sequence.Length > 5 || sequence.Length < 1 || inputCards.Length != 7) return null;
 
 
-            List<Card> outputCards = new List<Card>(5);
 
 
-            inputCards = inputCards.OrderBy(c => c.value).ToArray();
-            Card[,] table = new Card[15,4];
+       
 
-
-            foreach (Card card in inputCards)
-            {
-                table[card.value, card.suit] = card;
-                if (card.value == 14) table[1, card.suit] = card;
-            }
-
-
-
-
-            inputCards = inputCards.OrderByDescending(c => c.value).ToArray();
-
-            List<Card>[] cardObj = new List<Card>[inputCards.Distinct().Count()]; cardObj.Initialize();
-            for (int i = 0, j = 0; i < inputCards.Length; ++i)
-            {
-                cardObj[j].Add(inputCards[i]);
-
-                if (inputCards[i].value != inputCards[i].value) ++j;
-            }
-
-
-            switch(sequence)
-            {
-                //royal flush
-                case "S####":
-                case "s####":
-                    if (sequence[0] == 'S' && cardObj[0][0].value != 14) return false;
-
-                    if (nextInSequence(cardObj, "sssss")) return nextInSequence(cardObj, "#####");
-                    else return false;
-
-                case "@@-@@":
-                case "@@@@":
-                case "@@@":
-                case "@@":
-                    if (sequence[2] == '-') 
-
-                    return (sequence[2] == '-') ? nextInSequence(cardObj, sequence) && nextInSequence(cardObj, sequence, 2) : nextInSequence(cardObj, sequence);
-
-
-                    break;
-                
-            }
-
-
-
-
-
-        }
-
-
-
-        bool nextInSequence(Card[,] inputCards, string sequence, out List< Card > cards)
-        {
-            cards = new List<Card>();
-            string[] subSequences = sequence.Split('-');
-            string temp = "";
-
-
-            Card[][] inputCardsTransposed = new Card[4][];
-            for (int i = 0; i < 15; ++i)
-            {
-                inputCardsTransposed[4] = new Card[15];
-                for (int j = 0; j < 4; ++j)
-                {
-                    inputCardsTransposed[j][i] = inputCards[i, j];
-                }
-            }
-
-
-            foreach (string subSequence in subSequences)
-            {
-
-                for (int i = 3; i >= 0; i--)
-                {
-
-                    int index = ((inputCardsTransposed[i]
-                        .Select((select) => (select.Equals(new Card())) ? '-' : '+').ToString() ?? "")
-                        .Reverse().ToString() ?? "")
-                        .IndexOf( new string('+', subSequence.Count(ch => ch == '#')) );
-
-                    if (index != 0) break;
-
-                    cards.AddRange(inputCardsTransposed[i][(index..subSequence.Count(ch => ch == '#'))] );
-
-                }
-
-            }
-
-
-
-            foreach (char c in "#@s")
-            {
-                if (sequence.Count(e => e == c) == 1)
-                {
-                    cards.Add((c == '#') ? inputCardsBySuit[0] : inputCardsByValue[0]);
-                    continue;
-                }
-
-                for (int j = 1; j < sequence.Count(e => e == sequence[i]); ++j)
-                {
-                    if (sequence[i] == '#' && inputCardsBySuit[j - 1].suit == inputCardsBySuit[j].suit) cards.Add(inputCardsBySuit[j - 1]);
-                    if (sequence[i] == '@' && inputCardsByValue[j - 1].value == inputCardsByValue[j].value) cards.Add(inputCardsByValue[j - 1]);
-                    if (sequence[i] == 's' && inputCardsByValue[j - 1].value == inputCardsByValue[j].value - 1) cards.Add(inputCardsByValue[j - 1]);
-                }
-            }
-
-
-            return false;
-        }
-
-
-
-            Card[]? suits(Card[] inputCards, string sequence = "")
-        {
-            List<Card>[] suit = new List<Card>[4];
-            for (int i = 0; i < 4; ++i)
-            {
-                suit[i] = new List<Card>();
-            }
-
-            foreach (Card item in inputCards)
-            {
-                suit[item.suit].Add(item);
-            }
-
-            for (int i = 0; i < 4; ++i)
-            {
-                if (suit[i].Count == sequence.Count(c => c == '#'))
-                {
-                    for (int j = 0; j < sequence.Count(c => c == '#'); ++j)
-                    {
-                        return suit[i].Slice(0, sequence.Count(c => c == '#')).ToArray();
-                    }
-
-                }
-            }
-            return null;
-        }
-
-        /*
-        Card[]? value(Card[] inputCards, string sequence = "")
-        {
-            List<Card> outputCards = new List<Card>(5);
-
-            inputCards = inputCards.OrderBy(c => c.value).ToArray();
-
-            
-
-
-
-
-            /*
-            List<Card>[] value = new List<Card>[15];
-            for (int i = 0; i < 15; ++i)
-            {
-                value[i] = new List<Card>();
-            }
-
-            foreach (Card item in inputCards)
-            {
-                value[item.value].Add(item);
-            }
-
-
-
-            
-            for (int i = 14; i >= 2; --i)
-            {
-
-                if (value[i].Count == sequence.Count(c => c == '@'))
-                {
-                    for (int j = 0; j < sequence.Count(c => c == '@'); ++j)
-                    {
-                        outputCards.Add(value[i][j]);
-                    }
-
-                    continue;
-                }
-                else if (value[i].Count == sequence.Count(c => c == '£'))
-                {
-                    for (int j = 0; j < sequence.Count(c => c == '£'); ++j)
-                    {
-                        outputCards.Add(value[i][j]);
-                    }
-
-                    return outputCards.ToArray();
-                }
-            
-        }
-
-
-            Card[]? straight(Card[] inputCards, string sequence = "")
-            {
-                inputCards = inputCards.OrderBy(c => c.value).ToArray();
-                List<Card> outputCards = new List<Card>(5);
-
-                for (int i = 0; i < 3; ++i)
-                {
-
-                    
-
-                    if (!nextInSequence(inputCards, i)) continue;
-                    else return inputCards[0..5];
-                    //else return inputCards.Skip(i).Take(5).ToArray();
-                    //else return inputCards.Take(new Range(i, i+5)).ToArray();
-
-
-                }
-
-                return null;
-            }
-
-            bool nextInSequence(Card[] c, int index)
-            {
-
-                if (c[index].value == c[index + 1].value - 1) return nextInSequence(c, index - 1);
-                else return false;
-            }
-            */
-
-        }
+    }
         
 
 
