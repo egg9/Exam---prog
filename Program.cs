@@ -1,59 +1,73 @@
 ﻿using System.Linq;
+using Poker;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
+using Spectre.Console;
 
 namespace Max
 {
-    public class Program
+    static public class Program
     {
 
-        static List<Card> communityCards = new List<Card>(); // the five cards in the middle of the poker table
-        static Deck deck = new Deck(1);
+        static List<Card> communityCards = new List<Card>(5); // the five cards in the middle of the poker table
+        static LinkedList<Player> players = new LinkedList<Player>();
+        static Deck deck = new Deck();
+        
 
         static int Main()
         {
-            Console.OutputEncoding = Encoding.UTF8;
-
-            Player[] players;
-
+            do
             {
-                int temp = UI.inputI("How many players are joining?: ") ?? 0;
-                players = new Player[(temp < 2) ? 2 : temp];
+                Console.Clear();
+                AnsiConsole.Clear();
+
+                int PlayersNum = AnsiConsole.Prompt(
+                    new TextPrompt<int>("How many players will be joining? ").DefaultValue(2)
+                    .Validate((n) => n switch
+                    {
+                        < 1 => ValidationResult.Error("At least one person must be playing"),
+                        <= 23 => ValidationResult.Success(),
+                        _ => ValidationResult.Error("Damn you got way too many friend or just have a good imagination")
+                    })
+                    );
+
+                int PlayersBalance = (int)AnsiConsole.Prompt(
+                    new TextPrompt<Int128>("What should be the balance of each player? ").DefaultValue(1000)
+                    .Validate<Int128>((n) =>
+                    {
+                        if (n <= 0) return ValidationResult.Error("Come on, don't gamble if you're broke");
+                        else if (n <= 2147483647 / PlayersNum) return ValidationResult.Success();
+                        else return ValidationResult.Error("Chill cowboy, there is a limit");
+                    })
+                    );
 
 
-                int balance = UI.inputI("What should be the balance of the players?: ") ?? 1000;
+                deck.shuffle(10);
 
-
-                ////////////////////////////////////////////////////////////////////////Dealing cards
-                deck.shuffle(5);
-
-                for (int i = 0; i < players.Length; ++i)
+                foreach (var player in players)
                 {
-                    players[i] = new Player(balance);
-                    players[i].updateHand(deck.first());
+                    player = new Player(PlayersBalance);
+                    players[i%PlayersNum].updateHand(deck.first());
                 }
-            }
-            UI.print("Done with dealing first cards");
 
-            for (int i = 0; i < players.Length; ++i)
-            {
-
-                players[i].updateHand(deck.first());
-            }
-
-            UI.print("Done with dealing second cards");
-            ////////////////////////////////////////////////////////////////////////
+            } while (!AnsiConsole.Prompt(
+                new ConfirmationPrompt("Are you people sure?")
+                ));
 
 
+            Console.Clear();
+            AnsiConsole.Clear();
 
-            UI.Reset();
-            UI.print($"{deck.cards.Count / 52} decks of cards in the deck - {deck.cards.Count} cards in the game - {players.Length} players online", 0, 0, true);
-            UI.print(" ------------------------------------------------------------------", 0, 15, true);
-            UI.print("| 'Space' for  check | 'Z' for call | 'X' for raise | 'W' for fold |", 0, 16, true);
-            UI.print(" ------------------------------------------------------------------", 0, 17, true);
-            UI.print("What will you do?", 0, 18, true);
+
+            //start rendering
+            Poker.UI.Header.update();
+            Poker.UI.Table.update();
+            Poker.UI.Option.update();
+            // end
+            
 
             
 
@@ -65,12 +79,11 @@ namespace Max
             {
                 for (int playerIndex = 0; playerIndex < players.Length; ++playerIndex)
                 {
-                    int i = 0;
-                    communityCards.ForEach(
-                        x => {
-                            UI.print(x.getCard(), 5 + i * 12, 8, true);
-                            ++i;
-                        });
+                    
+                    
+
+
+                    Poker.UI.Table.update(, communityCards );
 
                     UI.print($"{players[playerIndex].balance}", 80, 5, true);
                     UI.print($"{players[playerIndex].bet}", 80, 6, true);
@@ -142,7 +155,10 @@ namespace Max
 
                 if (turn > 2)
                 {
-                    UI.print( players[0].sequenceFinder(players[0].hand.Concat(communityCards).OrderByDescending(cards => cards.value).ToArray(), "@@"));
+                    (int, Card[]) temp = players[0].rank(players[0].hand, communityCards);
+
+                    UI.print(temp.Item1 + " : ");
+                    UI.printCards( temp.Item2);
                 }
             }
 
@@ -237,68 +253,68 @@ namespace Max
             //Royal flush
             {
                 temp = matchByStraight(cards);
-                temp = matchBySuit(temp);
+                temp = temp.Concat(matchBySuit(temp)).ToArray();
 
-                if (temp.Length > 5) return (9, temp);
+                if (temp.Length >= 5) return (9, temp);
             }
 
             //Straight flush
             {
                 temp = matchByStraight(cards, 13);
-                temp = matchBySuit(temp);
+                temp = temp.Concat(matchBySuit(temp)).ToArray();
 
-                if (temp.Length > 5) return (8, temp);
+                if (temp.Length >= 5) return (8, temp);
             }
 
             //Four of a kind
             {
                 temp = matchByValue(cards, 4);
 
-                if (temp.Length > 4) return (7, temp);
+                if (temp.Length >= 4) return (7, temp);
             }
 
             //Full house
             {
                 temp = matchByValue(cards, 3);
-                if (temp.Length > 2) temp = temp.Concat( matchByValue(cards, 2, temp[0].value-1) ).ToArray();
+                if (temp.Length >= 3) temp = temp.Concat( matchByValue(cards, 2, temp[0].value-1) ).ToArray();
 
-                if (temp.Length > 5) return (6, temp);
+                if (temp.Length >= 5) return (6, temp);
             }
 
             //Flush
             {
                 temp = matchBySuit(cards);
 
-                if (temp.Length > 5) return (5, temp);
+                if (temp.Length >= 5) return (5, temp);
             }
 
             //Straight
             {
                 temp = matchByStraight(cards);
 
-                if (temp.Length > 5) return (4, temp);
+                if (temp.Length >= 5) return (4, temp);
             }
 
             //Three of a kind
             {
                 temp = matchByValue(cards, 3);
 
-                if (temp.Length > 3) return (3, temp);
+                if (temp.Length >= 3) return (3, temp);
             }
 
             //Two pairs
             {
                 temp = matchByValue(cards, 2);
-                temp = temp.Concat( matchByValue(cards, 2, temp[0].value-1) ).ToArray();
+                if (temp.Length >= 2) temp = temp.Concat( matchByValue(cards, 2, temp[0].value-1) ).ToArray();
 
-                if (temp.Length > 4) return (2, temp);
+                if (temp.Length >= 4) return (2, temp);
             }
 
             //Pair
             {
                 temp = matchByValue(cards, 2);
 
-                if (temp.Length > 2) return (1, temp);
+                if (temp.Length >= 2) return (1, temp);
             }
 
             //High card
@@ -337,7 +353,7 @@ namespace Max
 
         Card[] matchByStraight(Card[] cards, int start = 14)
         {
-            char[] values = new string(' ', 14).ToCharArray();
+            char[] values = new string(' ', 15).ToCharArray();
             foreach (Card c in cards)
             {
                 values[c.value] = '#';
@@ -375,7 +391,7 @@ namespace Max
         public List<Card> cards { get; private set; } = new List<Card>();
 
 
-        public Deck(int decks)
+        public Deck(int decks = 1)
         {
             for (int i = 0; i < decks; ++i)
             {
@@ -444,7 +460,6 @@ namespace Max
 
 
 
-
     public static class UI
     {
 
@@ -458,6 +473,13 @@ namespace Max
         public static void print(object text)
         {
             Console.Write(text);
+        }
+
+        public static void print(object[] arr)
+        {
+            foreach (var e in arr) {
+                Console.Write(e);
+            }
         }
 
         /// <summary>
@@ -474,6 +496,31 @@ namespace Max
            
             if (sticky && buffer.Contains(((string)text, x, y))) buffer.Remove( ((string)text, x, y) );
             if (sticky) buffer.Add((text.ToString() ?? "", x, y));
+        }
+
+        public static void print(object[] arr, int x = 0, int y = 0, bool sticky = false) // the name sticky comes from CSS, where it is used to make an element fixed or sticked to one position on the screen and not an the body
+        {
+            foreach (var e in arr)
+            {
+                Console.SetCursorPosition(x, y);
+                Console.Write(e);
+
+                if (sticky && buffer.Contains(((string)e, x, y))) buffer.Remove(((string)e, x, y));
+                if (sticky) buffer.Add((e.ToString() ?? "", x, y));
+
+                x += 2;
+            }
+        }
+
+        public static void printCards(Card[] arr) // the name sticky comes from CSS, where it is used to make an element fixed or sticked to one position on the screen and not an the body
+        {
+            foreach (var e in arr)
+            {
+
+                Console.Write(e.getCard());
+
+
+            }
         }
 
         public static string inputS(string text)
