@@ -14,21 +14,21 @@ namespace Poker
             static Header()
             {
                 Console.SetCursorPosition(2, 1);
-                Console.Out.WriteLine("Player 00 plays now with balance of 0$");
+                Console.Out.WriteLine("Player 00 plays now   |   Balance/Betted: 0$/0$");
             }
 
-            static public void update(int playerId = -1, int playerBalance = -1)
+            static public void update(int playerId = -1, int playerBalance = -1, uint playerBet = 0)
             {
                 if (playerId != -1)
                 {
-                    Console.SetCursorPosition(7, 1);
-                    Console.Out.WriteLine((playerId > 8) ? "0" + playerId : playerId);
+                    Console.SetCursorPosition(9, 1);
+                    Console.Out.WriteLine((playerId < 9) ? "0" + playerId : playerId);
                 }
 
                 if (playerBalance != -1)
                 {
-                    Console.SetCursorPosition(37, 1);
-                    Console.Out.WriteLine((playerBalance + "$").PadRight(10, ' '));
+                    Console.SetCursorPosition(44, 1);
+                    Console.Out.WriteLine((playerBalance + "$ / " + playerBet + '$').PadRight(25, ' '));
                 }
 
             }
@@ -42,14 +42,14 @@ namespace Poker
                 Console.SetCursorPosition(0, 5);
                 Console.Out.Write('+' + new string('-', 79) + '+');
 
-                for (int i = 6; i < 15; ++i)
+                for (int i = 6; i < 18; ++i)
                 {
                     Console.SetCursorPosition(0, i); Console.Out.Write('|');
                     Console.SetCursorPosition(80, i); Console.Out.Write('|');
 
                 }
 
-                Console.SetCursorPosition(0, 15);
+                Console.SetCursorPosition(0, 18);
                 Console.Out.Write('+' + new string('-', 79) + '+');
             }
 
@@ -59,7 +59,7 @@ namespace Poker
                 {
                     int temp = 4 * communityCards.Length - 2;
 
-                    Console.SetCursorPosition(temp / 2, 8);
+                    Console.SetCursorPosition(40 - temp / 2, 8);
                     Array.ForEach(communityCards, card => Console.Out.Write(card.getCard() + "  "));
 
                 }
@@ -68,7 +68,7 @@ namespace Poker
                 {
                     int temp = 4 * hand.Length - 2;
 
-                    Console.SetCursorPosition(temp / 2, 13);
+                    Console.SetCursorPosition(40 - temp / 2, 17);
                     Array.ForEach(hand, card => Console.Out.Write(card.getCard() + "  "));
 
                 }

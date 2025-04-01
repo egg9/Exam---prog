@@ -1,4 +1,5 @@
 ﻿using Spectre.Console;
+using System.Text;
 
 namespace Max
 {
@@ -14,6 +15,7 @@ namespace Max
         {
             do
             {
+                Console.OutputEncoding = Encoding.UTF8;
                 Console.Clear();
                 AnsiConsole.Clear();
 
@@ -49,7 +51,6 @@ namespace Max
                 }
 
                 players = new LinkedList<Player>(temp);
-                players.AddFirst(players.Last);
 
             } while (!AnsiConsole.Prompt(
                 new ConfirmationPrompt("Are you people sure?")
@@ -72,68 +73,75 @@ namespace Max
 
             ////////////////////////////////////////////////////////////////////////Game loop
             ConsoleKey key;
-
+            uint biggestBet = 0;
+            uint turn = 0;
 
             for (var node = players.First; communityCards.Count < 5; node = node.Next ?? players.First) //The game loop
             {
                 ref var player = ref node.ValueRef;
                 if (player.folded) continue;
 
-                Poker.UI.Header.update((int)player.Id, (int)player.balance);
+
+                Poker.UI.Header.update((int)player.Id, (int)player.balance, player.bet);
                 Poker.UI.Table.update(player.hand, communityCards.ToArray());
 
 
-
-                key = Console.ReadKey(intercept: true).Key;
-                switch (key)
+                do
                 {
+                    key = Console.ReadKey(intercept: true).Key;
 
-                    case ConsoleKey.Spacebar: //check
+                    switch (key)
+                    {
 
-
-                        break;
-
-                    case ConsoleKey.Z: //call
-
-
-                        if (!player.newBet(node.Previous.Value.balance))
-                        {
-                            player.allIn();
-                        }
-
-                        UI.print($"Called for {player.bet}$", 2, 4, true);
-
-                        break;
-
-                    case ConsoleKey.X: //raise
-
-                        if (!player.newBet((uint?)UI.inputI("What will be your new bet?: ", 0, 22) ?? player.bet))
-                        {
-                            player.allIn();
-                        }
-
-                        UI.print($"Raised to {player.bet}$ ", 2, 4, true);
+                        case ConsoleKey.Spacebar: //check
 
 
-                        break;
+                            break;
 
-                    case ConsoleKey.W: //fold
-
-                        UI.print($"{"Max"} folded   ", 2, 4, true);
-
-                        player.fold();
-
-                        break;
+                        case ConsoleKey.Z: //call
 
 
-                    case ConsoleKey.Escape:
+                            if (!player.newBet(biggestBet))
+                            {
+                                player.allIn();
+                            }
 
-                        return 0;
+                            UI.print($"Called for {player.bet}$", 2, 4, true);
+
+                            break;
+
+                        case ConsoleKey.X: //raise
+
+                            if (!player.newBet((uint?)UI.inputI("What will be your new bet?: ", 0, 22) ?? player.bet))
+                            {
+                                player.allIn();
+                            }
+
+                            UI.print($"Raised to {player.bet}$ ", 2, 4, true);
 
 
-                }
+                            break;
 
-                if (node == players.First) communityCardsAdd();
+                        case ConsoleKey.W: //fold
+
+                            UI.print($"{"Max"} folded   ", 2, 4, true);
+
+                            player.fold();
+
+                            break;
+
+
+                        case ConsoleKey.Escape:
+
+                            return 0;
+
+
+                    }
+
+                } while (!new[] { ConsoleKey.Spacebar, ConsoleKey.Z, ConsoleKey.X, ConsoleKey.W }.Contains(key));
+
+
+                if (node == players.First) communityCardsAdd(turn++);
                 player.Hand = player.rank(communityCards);
             }
 
@@ -151,17 +159,22 @@ namespace Max
             return 0;
         }
 
-        public static IEnumerator<int> communityCardsAdd()
+        public static void communityCardsAdd(uint turn)
         {
-            yield return 0;
-            deck.first(); /*burn*/ communityCards.Add(deck.first()); communityCards.Add(deck.first()); communityCards.Add(deck.first()); yield return 1;
-            deck.first(); /*burn*/ communityCards.Add(deck.first()); yield return 2;
-            deck.first(); /*burn*/ communityCards.Add(deck.first()); yield return 3;
+            deck.first();
+
+            if (turn == 2 || turn == 3) communityCards.Add(deck.first());
+            else if (turn == 1)
+            {
+                communityCards.Add(deck.first());
+                communityCards.Add(deck.first());
+                communityCards.Add(deck.first());
+            }
+
+
+            return;
+
         }
-
-
-
-
     }
 
 
@@ -173,7 +186,7 @@ namespace Max
         public uint balance { get; private set; }
         public uint bet { get; private set; } = 0;
 
-        static uint id = 0;
+        static uint id = 1;
         public uint Id { get; private set; }
         public bool folded { get; private set; } = false;
         public (int rank, Card[] cards) Hand;
@@ -581,7 +594,51 @@ namespace Max
 
 
 
+    /*public class MyListNode<T>
+    {
+        public T data;
+        MyListNode<T>? next;
+        MyListNode<T>? prev;
 
+        public MyListNode(T data, MyListNode<T>? prev = null, MyListNode<T>? next = null)
+        {
+            this.data = data;
+
+            this.prev = prev;
+            this.next = next;
+        }
+    }
+
+    public class MyList<T> : IEnumerable<T>
+    {
+        MyListNode<T> headNode;
+        MyListNode<T> endNode;
+
+        public MyList(T[] arr)
+        {
+            headNode = new MyListNode<T>(arr[0]);
+
+            foreach (T e in arr[1..])
+            {
+
+            }
+        }
+
+        public void addAt(T data, int index)
+        {
+
+        }
+
+        /*public T this[int index]
+        {
+            get
+            {
+
+            }
+        }
+
+
+    }*/
 
 
 }
