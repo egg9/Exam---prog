@@ -7,159 +7,160 @@ namespace Max
     {
 
         static List<Card> communityCards = new List<Card>(5); // the five cards in the middle of the poker table
-        static LinkedList<Player> players = new LinkedList<Player>();
+        static List<Player> players = new List<Player>();
         static Deck deck = new Deck();
 
 
         static int Main()
         {
+            Console.OutputEncoding = Encoding.UTF8;
+            deck.shuffle(1000);
+
             do
             {
-                Console.OutputEncoding = Encoding.UTF8;
+
                 Console.Clear();
                 AnsiConsole.Clear();
 
-                uint PlayersNum = (uint)AnsiConsole.Prompt(
+                for (
+                    int i = AnsiConsole.Prompt(
                     new TextPrompt<int>("How many players will be joining? ").DefaultValue(2)
                     .Validate((n) => n switch
                     {
                         < 1 => ValidationResult.Error("At least one person must be playing"),
-                        <= 23 => ValidationResult.Success(),
+                        < 2000 => ValidationResult.Success(),
                         _ => ValidationResult.Error("Damn you got way too many friend or just have a good imagination")
                     })
-                    );
-
-                uint PlayersBalance = (uint)AnsiConsole.Prompt(
-                    new TextPrompt<Int128>("What should be the balance of each player? ").DefaultValue(1000)
-                    .Validate<Int128>((n) =>
+                    ), balance = AnsiConsole.Prompt(
+                    new TextPrompt<int>("What should be the balance of each player? ").DefaultValue(1000)
+                    .Validate((n) =>
                     {
                         if (n <= 0) return ValidationResult.Error("Come on, don't gamble if you're broke");
-                        else if (n <= 2147483647 / PlayersNum) return ValidationResult.Success();
+                        else if (n <= 2147483647 / i) return ValidationResult.Success();
                         else return ValidationResult.Error("Chill cowboy, there is a limit");
                     })
-                    );
-
-
-                deck.shuffle(5);
-
-                Player[] temp = new Player[PlayersNum];
-                for (int i = 0; i < PlayersNum * 2; ++i)
+                    ); i > 0; --i)
                 {
-                    if (i < PlayersNum) temp[i] = new Player(PlayersBalance);
-
-                    temp[i % PlayersNum].updateHand(deck.first());
+                    players.Add(new Player((uint)balance));
+                    players[players.Count - 1].updateHand(new[] { deck.first(), deck.first() });
                 }
 
-                players = new LinkedList<Player>(temp);
 
             } while (!AnsiConsole.Prompt(
                 new ConfirmationPrompt("Are you people sure?")
                 ));
 
-
-            Console.Clear();
-            AnsiConsole.Clear();
+            Console.CursorVisible = false;
 
 
-            //start rendering
-            Poker.UI.Header.update();
-            Poker.UI.Table.update();
-            Poker.UI.Option.update();
-            // end
-
-
-
-
-
-            ////////////////////////////////////////////////////////////////////////Game loop
-            ConsoleKey key;
-            uint biggestBet = 0;
-            uint turn = 0;
-
-            for (var node = players.First; communityCards.Count < 5; node = node.Next ?? players.First) //The game loop
+            do
             {
-                ref var player = ref node.ValueRef;
-                if (player.folded) continue;
+
+                Console.Clear();
+                AnsiConsole.Clear();
+                //start rendering
+                Poker.UI.Header.update();
+                Poker.UI.Table.update();
+                Poker.UI.Option.update();
+                // end
 
 
-                Poker.UI.Header.update((int)player.Id, (int)player.balance, player.bet);
-                Poker.UI.Table.update(player.hand, communityCards.ToArray());
 
+                ////////////////////////////////////////////////////////////////////////Game loop
+                ConsoleKey key;
+                uint biggestBet = 0;
 
-                do
+                for (uint turn = 1; turn < 5; turn = communityCardsAdd(turn))
                 {
-                    key = Console.ReadKey(intercept: true).Key;
 
-                    switch (key)
+
+                    for (int j = 0; j < players.Count; ++j) //The game loop
                     {
-
-                        case ConsoleKey.Spacebar: //check
-
-
-                            break;
-
-                        case ConsoleKey.Z: //call
+                        if (players[j].folded) continue;
+                        players[j].Hand = players[j].rank(communityCards);
 
 
-                            if (!player.newBet(biggestBet))
+                        Poker.UI.Header.update((int)players[j].Id, (int)players[j].balance, players[j].bet);
+                        Poker.UI.Table.update(players[j].hand, communityCards.ToArray());
+
+
+                        do
+                        {
+                            key = Console.ReadKey(intercept: true).Key;
+
+                            switch (key)
                             {
-                                player.allIn();
+
+                                case ConsoleKey.Spacebar: //check
+
+                                    if (players[j].bet < biggestBet) key = ConsoleKey.None;
+
+                                    break;
+
+                                case ConsoleKey.Z: //call
+
+
+                                    if (!players[j].newBet(biggestBet))
+                                    {
+                                        players[j].allIn();
+                                    }
+
+                                    UI.print($"Called for {players[j].bet}$", 2, 4, true);
+
+                                    break;
+
+                                case ConsoleKey.X: //raise
+
+                                    if (!players[j].newBet((uint?)UI.inputI("What will be your new bet?: ", 0, 23) ?? biggestBet))
+                                    {
+                                        players[j].allIn();
+                                    }
+
+                                    UI.print($"Raised to {players[j].bet}$ ", 2, 4, true);
+
+
+                                    break;
+
+                                case ConsoleKey.W: //fold
+
+                                    UI.print($"{"Max"} folded   ", 2, 4, true);
+
+                                    players[j].fold();
+
+                                    break;
+
+
+                                case ConsoleKey.Escape:
+
+                                    if (AnsiConsole.Prompt(
+                                        new ConfirmationPrompt("Are you people sure?")
+                                        )) return 0;
+
+                                    break;
                             }
-
-                            UI.print($"Called for {player.bet}$", 2, 4, true);
-
-                            break;
-
-                        case ConsoleKey.X: //raise
-
-                            if (!player.newBet((uint?)UI.inputI("What will be your new bet?: ", 0, 22) ?? player.bet))
-                            {
-                                player.allIn();
-                            }
-
-                            UI.print($"Raised to {player.bet}$ ", 2, 4, true);
-
-
-                            break;
-
-                        case ConsoleKey.W: //fold
-
-                            UI.print($"{"Max"} folded   ", 2, 4, true);
-
-                            player.fold();
-
-                            break;
-
-
-                        case ConsoleKey.Escape:
-
-                            return 0;
-
-
+                        } while (!new[] { ConsoleKey.Spacebar, ConsoleKey.Z, ConsoleKey.X, ConsoleKey.W }.Contains(key));
                     }
 
-                } while (!new[] { ConsoleKey.Spacebar, ConsoleKey.Z, ConsoleKey.X, ConsoleKey.W }.Contains(key));
+                }
 
 
-                if (node == players.First) communityCardsAdd(turn++);
-                player.Hand = player.rank(communityCards);
-            }
+                Player[] winners = players.OrderByDescending(p => p.Hand.rank).ToArray();
 
+                Poker.UI.Header.update((int)winners[0].Id, (int)winners[0].balance, winners[0].bet);
+                Poker.UI.Table.update(winners[0].hand, communityCards.ToArray());
 
-            Player[] winners = players.OrderByDescending(p => p.Hand.rank).ToArray();
+                Console.SetCursorPosition(2, 4);
+                UI.print(winners[0].Hand.rank + " : ");
+                UI.printCards(winners[0].Hand.cards);
 
+                Console.Read();
 
-
-            UI.print(winners[0].Hand.rank + " : ");
-            UI.printCards(winners[0].Hand.cards);
-
-
-
+            } while (players.);
 
             return 0;
         }
 
-        public static void communityCardsAdd(uint turn)
+        public static uint communityCardsAdd(uint turn)
         {
             deck.first();
 
@@ -171,9 +172,7 @@ namespace Max
                 communityCards.Add(deck.first());
             }
 
-
-            return;
-
+            return ++turn;
         }
     }
 
@@ -221,10 +220,9 @@ namespace Max
             return true;
         }
 
-        public void updateHand(Card card)
+        public void updateHand(Card[] card)
         {
-            if (hand[0].Equals(new Card())) hand[0] = card;
-            else if (hand[1].Equals(new Card())) hand[1] = card;
+            hand = card;
         }
 
 
@@ -248,9 +246,12 @@ namespace Max
             //Royal flush
             {
                 temp = matchByStraight(cards);
-                temp = temp.Concat(matchBySuit(temp)).ToArray();
+                if (temp.MaxBy(c => c.value).value == 14)
+                {
+                    temp = temp.Concat(matchBySuit(temp)).ToArray();
 
-                if (temp.Length >= 5) return (9, temp);
+                    if (temp.Length >= 5) return (9, temp);
+                }
             }
 
             //Straight flush
@@ -271,7 +272,7 @@ namespace Max
             //Full house
             {
                 temp = matchByValue(cards, 3);
-                if (temp.Length >= 3) temp = temp.Concat(matchByValue(cards, 2, temp[0].value - 1)).ToArray();
+                if (temp.Length >= 3) temp = temp.Concat(matchByValue(cards, 2, new[] { temp[0].value })).ToArray();
 
                 if (temp.Length >= 5) return (6, temp);
             }
@@ -300,7 +301,7 @@ namespace Max
             //Two pairs
             {
                 temp = matchByValue(cards, 2);
-                if (temp.Length >= 2) temp = temp.Concat(matchByValue(cards, 2, temp[0].value - 1)).ToArray();
+                if (temp.Length >= 2) temp = temp.Concat(matchByValue(cards, 2, new[] { temp[0].value })).ToArray();
 
                 if (temp.Length >= 4) return (2, temp);
             }
@@ -333,13 +334,14 @@ namespace Max
             return new Card[0];
         }
 
-        Card[] matchByValue(Card[] cards, int lenght, int start = 14)
+        Card[] matchByValue(Card[] cards, int lenght, int[]? skip = default)
         {
             string values = string.Join("", cards.Select((c) => c.value.ToString("X")).ToArray());
 
-            for (int i = start; i > 0; --i)
+            for (int i = 14; i > 0; --i)
             {
-                if (values.Length - lenght >= values.Replace(i.ToString("X"), "").Length) return cards.Where((c) => c.value == i).ToArray();
+                if ((skip ?? new[] { 0 }).Contains(i)) continue;
+                if (values.Length - lenght >= values.Replace(i.ToString("X"), "").Length) return cards.Where((c) => c.value == i).ToArray()[0..lenght];
             }
 
 
@@ -353,7 +355,7 @@ namespace Max
             {
                 values[c.value] = '#';
             }
-            int index = string.Join("", values.Reverse()).IndexOf("#####"); if (index < 1) return new Card[0];
+            int index = string.Join("", values.Reverse()).IndexOf("#####"); if (index < 1) return new Card[1];
 
             return cards.Where((c) => c.value >= index && c.value <= index + 5).ToArray();
 
@@ -518,7 +520,7 @@ namespace Max
             foreach (var e in arr)
             {
 
-                Console.Write(e.getCard());
+                Console.Write(e.getCard() + ' ');
 
 
             }

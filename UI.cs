@@ -4,10 +4,7 @@ namespace Poker
 {
     static public class UI
     {
-        static UI()
-        {
-            Console.CursorVisible = false;
-        }
+
 
         static public class Header
         {
@@ -22,7 +19,7 @@ namespace Poker
                 if (playerId != -1)
                 {
                     Console.SetCursorPosition(9, 1);
-                    Console.Out.WriteLine((playerId < 9) ? "0" + playerId : playerId);
+                    Console.Out.WriteLine((playerId < 10) ? "0" + playerId : playerId);
                 }
 
                 if (playerBalance != -1)
@@ -59,7 +56,7 @@ namespace Poker
                 {
                     int temp = 4 * communityCards.Length - 2;
 
-                    Console.SetCursorPosition(40 - temp / 2, 8);
+                    Console.SetCursorPosition(38 - temp / 2, 8);
                     Array.ForEach(communityCards, card => Console.Out.Write(card.getCard() + "  "));
 
                 }
@@ -68,7 +65,7 @@ namespace Poker
                 {
                     int temp = 4 * hand.Length - 2;
 
-                    Console.SetCursorPosition(40 - temp / 2, 17);
+                    Console.SetCursorPosition(38 - temp / 2, 17);
                     Array.ForEach(hand, card => Console.Out.Write(card.getCard() + "  "));
 
                 }
